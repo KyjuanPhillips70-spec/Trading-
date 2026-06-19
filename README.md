@@ -97,6 +97,63 @@ Common first-time snags: a key typo in Actions secrets, or the sandbox needing a
 
 -----
 
+## Developer / local run instructions
+
+### Prerequisites
+
+- Python 3.11+
+- A Tradier sandbox account (free) — grab your access token from the dashboard.
+- A Telegram bot (create via @BotFather) and your chat ID (via @userinfobot).
+
+### Setup
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/kyjuanphillips70-spec/trading-.git
+cd trading-
+
+# 2. Create and activate a virtual environment
+python3.11 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set secrets (never commit this file)
+cat > .env <<'EOF'
+TRADIER_TOKEN=your_sandbox_token_here
+TRADIER_BASE_URL=https://sandbox.tradier.com/v1
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
+EOF
+
+# 5. Load secrets for the current shell session
+export $(grep -v '^#' .env | xargs)
+```
+
+### Run the scanner
+
+```bash
+python main.py
+```
+
+### Smoke-test the data layer (Stage 1+)
+
+```bash
+python scripts/smoke_data.py
+```
+
+Prints the shape of daily and 15-min bars for one ticker so you can confirm
+the Tradier connection is working before running the full scanner.
+
+### Run the test suite
+
+```bash
+pytest -v
+```
+
+-----
+
 ## Honest expectations
 
 - This mechanizes a sensible reading of ICT, but ICT is **discretionary and unproven as a pure system**. Treat alerts as candidates, not commands. Paper-trade or backtest before risking real money.
