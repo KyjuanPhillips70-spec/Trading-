@@ -11,6 +11,11 @@ on:
         options:
           - "false"
           - "true"
+      force_alert:
+        description: "Ticker to force-alert (e.g. NVDA). Runs live scan; sends real alert if setup found, placeholder if not."
+        required: false
+        default: ""
+        type: string
   schedule:
     # Every 20 minutes, 13:30–20:10 UTC, Mon–Fri.
     # Covers 09:30–16:00 ET during DST (standard time: shift cron to 14:30–21:10 UTC).
@@ -37,8 +42,17 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
+      - name: Force alert (single ticker)
+        if: ${{ github.event.inputs.test_alert != 'true' && github.event.inputs.force_alert != '' }}
+        run: python main.py --force-alert ${{ github.event.inputs.force_alert }}
+        env:
+          TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+          TRADIER_BASE_URL: https://sandbox.tradier.com/v1
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
       - name: Run scanner
-        if: ${{ github.event.inputs.test_alert != 'true' }}
+        if: ${{ github.event.inputs.test_alert != 'true' && github.event.inputs.force_alert == '' }}
         run: python main.py
         env:
           TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
