@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 TELEGRAM_API = "https://api.telegram.org"
 
 _TEST_ALERT_TEXT = """\
-🔔 *TEST ALERT — ICT Swing-Options Alert System*
+🔔 *TEST ALERT — ICT Swing\-Options Alert System*
 
 This is a delivery check, not a real setup.
 
