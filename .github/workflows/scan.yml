@@ -2,9 +2,18 @@ name: ict-scan
 
 on:
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "Send a Telegram delivery-check message instead of scanning"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
   schedule:
-    # Every 20 minutes, 13:30–20:10 UTC, Mon–Fri
-    # Covers 09:30–16:00 ET during DST; widen for standard time if needed.
+    # Every 20 minutes, 13:30–20:10 UTC, Mon–Fri.
+    # Covers 09:30–16:00 ET during DST (standard time: shift cron to 14:30–21:10 UTC).
     - cron: "*/20 13-20 * * 1-5"
 
 jobs:
@@ -21,7 +30,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Send test alert
+        if: ${{ github.event.inputs.test_alert == 'true' }}
+        run: python main.py --test-alert
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
       - name: Run scanner
+        if: ${{ github.event.inputs.test_alert != 'true' }}
         run: python main.py
         env:
           TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
