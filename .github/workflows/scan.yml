@@ -16,6 +16,14 @@ on:
         required: false
         default: ""
         type: string
+      force_alert_direction:
+        description: "Direction for placeholder alert when no real setup found (long or short)"
+        required: false
+        default: "long"
+        type: choice
+        options:
+          - "long"
+          - "short"
   schedule:
     # Every 20 minutes, 13:30–20:10 UTC, Mon–Fri.
     # Covers 09:30–16:00 ET during DST (standard time: shift cron to 14:30–21:10 UTC).
@@ -44,7 +52,7 @@ jobs:
 
       - name: Force alert (single ticker)
         if: ${{ github.event.inputs.test_alert != 'true' && github.event.inputs.force_alert != '' }}
-        run: python main.py --force-alert ${{ github.event.inputs.force_alert }}
+        run: python main.py --force-alert ${{ github.event.inputs.force_alert }} ${{ github.event.inputs.force_alert_direction }}
         env:
           TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
           TRADIER_BASE_URL: https://sandbox.tradier.com/v1
