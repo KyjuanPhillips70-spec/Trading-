@@ -131,9 +131,9 @@ def format_alert(setup: Setup) -> str:
         f"Γ {e(f'{c.gamma:.4f}')}  "
         f"V {e(f'{c.vega:.4f}')}  "
         f"IV {e(f'{c.iv:.1%}')}",
-        f"  Est\\. debit ~{e(f'{c.mid:.2f}')}  "
-        f"\\| est\\. P/L at target ~\\+{e(f'{est_profit:.0f}')}  "
-        f"at stop ~\\-{e(f'{est_loss:.0f}')}",
+        f"  Est\\. debit \\~{e(f'{c.mid:.2f}')}  "
+        f"\\| est\\. P/L at target \\~\\+{e(f'{est_profit:.0f}')}  "
+        f"at stop \\~\\-{e(f'{est_loss:.0f}')}",
         f"  _{e(c.settlement_note)}_",
         "",
         f"*News:* {e(news_str)}",
