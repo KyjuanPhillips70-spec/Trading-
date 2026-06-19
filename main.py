@@ -1,7 +1,8 @@
 """Entry point — loop all tickers, run scanner, send alerts.
 
 Usage:
-    python main.py
+    python main.py                  # full scan
+    python main.py --test-alert     # send a Telegram delivery-check message
 
 Required environment variables (see §4):
     TRADIER_TOKEN
@@ -20,7 +21,7 @@ import sys
 
 import config
 from scanner import scan_ticker
-from alert import send_alert
+from alert import send_alert, send_test_alert
 
 
 logging.basicConfig(
@@ -53,4 +54,7 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    if "--test-alert" in sys.argv:
+        send_test_alert()
+    else:
+        run()
