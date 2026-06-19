@@ -29,7 +29,7 @@ from contracts import Contract
 
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(name)s — %(message)s",
 )
 log = logging.getLogger(__name__)
