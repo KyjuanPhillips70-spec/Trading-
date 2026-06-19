@@ -169,8 +169,8 @@ def send_test_alert() -> None:
 
 def _post(text: str) -> None:
     """POST a MarkdownV2 message to the configured Telegram chat."""
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not token or not chat_id:
         raise RuntimeError(
             "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in the environment."
