@@ -18,13 +18,13 @@ log = logging.getLogger(__name__)
 TELEGRAM_API = "https://api.telegram.org"
 
 _TEST_ALERT_TEXT = """\
-🔔 *TEST ALERT — ICT Swing\-Options Alert System*
+🔔 TEST ALERT — ICT Swing-Options Alert System
 
 This is a delivery check, not a real setup.
 
-If you can read this your Telegram integration is working correctly\\.
+If you can read this your Telegram integration is working correctly.
 
-_Alert only — not financial advice\\. Verify before trading\\._"""
+Alert only — not financial advice. Verify before trading."""
 
 
 @dataclass
@@ -163,12 +163,16 @@ def send_test_alert() -> None:
     Verifies TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are valid without
     requiring a real trade setup.
     """
-    _post(_TEST_ALERT_TEXT)
+    _post(_TEST_ALERT_TEXT, markdown=False)
     print("Test alert sent successfully.")
 
 
-def _post(text: str) -> None:
-    """POST a MarkdownV2 message to the configured Telegram chat."""
+def _post(text: str, markdown: bool = True) -> None:
+    """POST a message to the configured Telegram chat.
+
+    When *markdown* is True the message is parsed as MarkdownV2; otherwise it
+    is sent as plain text (used for the delivery-check alert).
+    """
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not token or not chat_id:
@@ -176,7 +180,9 @@ def _post(text: str) -> None:
             "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in the environment."
         )
     url = f"{TELEGRAM_API}/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text, "parse_mode": "MarkdownV2"}
+    payload = {"chat_id": chat_id, "text": text}
+    if markdown:
+        payload["parse_mode"] = "MarkdownV2"
     resp = requests.post(url, json=payload, timeout=15)
     if not resp.ok:
         raise RuntimeError(
