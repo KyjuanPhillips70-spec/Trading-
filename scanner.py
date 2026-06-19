@@ -181,7 +181,9 @@ def evaluate(
         swing_end = float(highs[structure_event.index])
     else:
         swing_origin = sweep_extreme
-        swing_end = float(lows[structure_event.index])
+        # For bearish: find the lowest close after the sweep as the impulse low
+        sweep_to_bos = closes[sweep.sweep_index:structure_event.index + 1]
+        swing_end = float(sweep_to_bos.min()) if len(sweep_to_bos) > 0 else float(lows[structure_event.index])
 
     fvgs = find_fvgs(ltf, atr_length=config.DISP_ATR_LEN, disp_mult=config.DISP_MULT)
     obs = find_order_blocks(ltf, events, fvgs,
@@ -198,12 +200,21 @@ def evaluate(
         ote_low=config.OTE_LOW, ote_high=config.OTE_HIGH, ote_sweet=config.OTE_SWEET,
     )
 
-    in_ob_fvg = bool(confluence_levels) and any(
-        lo <= current_price <= hi if lo <= hi else hi <= current_price <= lo
-        for lo, hi in [ote.entry_zone]
-    )
-    entry_type = "OTE" if ote.in_ote else ("OB" if obs else ("FVG" if fvgs else None))
-    if not ote.in_ote and entry_type is None:
+    # Check if price is inside any actual OB or FVG zone (not just the OTE range).
+    price_in_ob = any(o.body_bottom <= current_price <= o.body_top for o in obs if o.direction == ote_dir)
+    price_in_fvg = any(f.bottom <= current_price <= f.top for f in fvgs if f.direction == ote_dir)
+    in_ob_fvg = price_in_ob or price_in_fvg
+
+    if ote.in_ote:
+        entry_type = "OTE"
+    elif price_in_ob:
+        entry_type = "OB"
+    elif price_in_fvg:
+        entry_type = "FVG"
+    else:
+        entry_type = None
+
+    if entry_type is None:
         log.debug("%s: price not in OTE / OB / FVG", ticker)
         return None
     if ote.invalidated:

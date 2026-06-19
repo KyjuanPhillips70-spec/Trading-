@@ -104,7 +104,7 @@ def detect_structure(df: pd.DataFrame, k: int = 2) -> list[StructureEvent]:
         is_disp = bool(disp_series.iloc[i])
 
         if trend == "up" and last_sh_level is not None:
-            if body_high > last_sh_level:
+            if closes[i] > last_sh_level:                   # body-close only
                 events.append(
                     StructureEvent(
                         type="BOS",
@@ -114,9 +114,9 @@ def detect_structure(df: pd.DataFrame, k: int = 2) -> list[StructureEvent]:
                         displacement=is_disp,
                     )
                 )
-                last_sh_level = highs[i]
+                last_sh_level = body_high                   # use body, not wick
 
-            elif last_sl_level is not None and body_low < last_sl_level and is_disp:
+            elif last_sl_level is not None and closes[i] < last_sl_level and is_disp:
                 events.append(
                     StructureEvent(
                         type="MSS",
@@ -127,10 +127,10 @@ def detect_structure(df: pd.DataFrame, k: int = 2) -> list[StructureEvent]:
                     )
                 )
                 trend = "down"
-                last_sl_level = lows[i]
+                last_sl_level = body_low                    # use body, not wick
 
         elif trend == "down" and last_sl_level is not None:
-            if body_low < last_sl_level:
+            if closes[i] < last_sl_level:                   # body-close only
                 events.append(
                     StructureEvent(
                         type="BOS",
@@ -140,9 +140,9 @@ def detect_structure(df: pd.DataFrame, k: int = 2) -> list[StructureEvent]:
                         displacement=is_disp,
                     )
                 )
-                last_sl_level = lows[i]
+                last_sl_level = body_low                    # use body, not wick
 
-            elif last_sh_level is not None and body_high > last_sh_level and is_disp:
+            elif last_sh_level is not None and closes[i] > last_sh_level and is_disp:
                 events.append(
                     StructureEvent(
                         type="MSS",
@@ -153,7 +153,7 @@ def detect_structure(df: pd.DataFrame, k: int = 2) -> list[StructureEvent]:
                     )
                 )
                 trend = "up"
-                last_sh_level = highs[i]
+                last_sh_level = body_high                   # use body, not wick
 
     return events
 

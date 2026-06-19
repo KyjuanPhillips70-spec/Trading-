@@ -58,7 +58,13 @@ def _prior_day_levels(df: pd.DataFrame) -> list[LiquidityPool]:
         pdl = float(prev_day["low"].min())
         # formed_index = first bar of the current day
         formed = df.index.get_loc(curr_day.index[0])
-        formed_i = formed if isinstance(formed, int) else int(formed.start)
+        if isinstance(formed, int):
+            formed_i = formed
+        elif isinstance(formed, slice):
+            formed_i = int(formed.start)
+        else:
+            import numpy as np
+            formed_i = int(np.argmax(formed))
         pools.append(LiquidityPool(pool_level=pdh, side="BSL", source="PDH", formed_index=formed_i))
         pools.append(LiquidityPool(pool_level=pdl, side="SSL", source="PDL", formed_index=formed_i))
     return pools
@@ -217,6 +223,7 @@ def detect_sweeps(
 
         swept = False
         sweep_idx: Optional[int] = None
+        bars_without_wick = 0
 
         for i in range(start, n):
             if pool.side == "BSL":
@@ -224,17 +231,23 @@ def detect_sweeps(
                     swept = True
                     sweep_idx = i
                     break
-                # Reset window: if we've gone more than sweep_window bars
-                # without a wick above the level, the pool resets.
-                if i - start >= sweep_window and highs[i] <= p:
-                    break
+                if highs[i] <= p:
+                    bars_without_wick += 1
+                    if bars_without_wick >= sweep_window:
+                        break
+                else:
+                    bars_without_wick = 0  # wick above pool but no reversal close yet
             else:  # SSL
                 if lows[i] < p and closes[i] > p:
                     swept = True
                     sweep_idx = i
                     break
-                if i - start >= sweep_window and lows[i] >= p:
-                    break
+                if lows[i] >= p:
+                    bars_without_wick += 1
+                    if bars_without_wick >= sweep_window:
+                        break
+                else:
+                    bars_without_wick = 0
 
         result.append(
             LiquidityPool(

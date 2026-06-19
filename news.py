@@ -89,8 +89,9 @@ def _parse_xml(text: str) -> list[dict]:
             for fmt in ("%m-%d-%Y %I:%M%p", "%m-%d-%Y %I%p"):
                 try:
                     naive = datetime.strptime(f"{date_s} {time_s}", fmt)
-                    # FF times are US Eastern; store as UTC (approx via fixed -5).
-                    dt = naive.replace(tzinfo=timezone(timedelta(hours=-5))).astimezone(timezone.utc)
+                    # FF times are US Eastern; use proper IANA tz to handle DST.
+                    from zoneinfo import ZoneInfo
+                    dt = naive.replace(tzinfo=ZoneInfo("America/New_York")).astimezone(timezone.utc)
                     break
                 except ValueError:
                     continue
