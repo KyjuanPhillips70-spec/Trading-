@@ -116,7 +116,7 @@ def format_alert(setup: Setup) -> str:
         "",
         f"*Bias:* Daily {e(setup.daily_bias)} \\(EMA stack {'✅' if setup.ema_stack_ok else '❌'}\\); "
         f"4H {e(setup.four_h_bias)}; 1H {e(setup.one_h_bias)}",
-        f"*DXY:* {e(dxy_str)}  |  *SMT:* {e(smt_str)}",
+        f"*DXY:* {e(dxy_str)}  \\|  *SMT:* {e(smt_str)}",
         f"*Trigger:* swept {e(setup.sweep_side)} @ {e(f'{setup.sweep_level:.2f}')} "
         f"→ {e(setup.structure_event)} → entry in {e(setup.entry_type)}",
         "",
@@ -132,7 +132,7 @@ def format_alert(setup: Setup) -> str:
         f"V {e(f'{c.vega:.4f}')}  "
         f"IV {e(f'{c.iv:.1%}')}",
         f"  Est\\. debit ~{e(f'{c.mid:.2f}')}  "
-        f"| est\\. P/L at target ~\\+{e(f'{est_profit:.0f}')}  "
+        f"\\| est\\. P/L at target ~\\+{e(f'{est_profit:.0f}')}  "
         f"at stop ~\\-{e(f'{est_loss:.0f}')}",
         f"  _{e(c.settlement_note)}_",
         "",
