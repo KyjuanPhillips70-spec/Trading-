@@ -35,17 +35,20 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def _placeholder_setup(ticker: str) -> Setup:
-    """Return a fully-formed placeholder Setup for *ticker* (no real signal)."""
+def _placeholder_setup(ticker: str, price: float) -> Setup:
+    """Return a placeholder Setup for *ticker* using *price* as the current price."""
+    stop = round(price * 0.985, 2)    # 1.5% below
+    target = round(price * 1.015, 2)  # 1.5% above
+    strike = round(price / 5) * 5     # nearest $5 strike
     contract = Contract(
-        symbol=f"{ticker}240119C00500000",
+        symbol=f"{ticker}{date.today().strftime('%y%m%d')}C{int(strike):08d}000",
         option_type="call",
-        strike=500.0,
+        strike=float(strike),
         expiry=str(date.today()),
         dte=10,
-        bid=4.90,
-        ask=5.10,
-        mid=5.00,
+        bid=round(price * 0.022, 2),
+        ask=round(price * 0.024, 2),
+        mid=round(price * 0.023, 2),
         delta=0.55,
         theta=-0.05,
         gamma=0.01,
@@ -53,25 +56,25 @@ def _placeholder_setup(ticker: str) -> Setup:
         iv=0.45,
         oi=1000,
         volume=300,
-        settlement_note="equity — PLACEHOLDER, not a real setup",
+        settlement_note="equity — PLACEHOLDER alert, no real ICT setup found",
     )
     return Setup(
         ticker=ticker,
         direction="LONG",
-        confidence=75,
-        daily_bias="long",
-        four_h_bias="long",
-        one_h_bias="long",
-        ema_stack_ok=True,
-        dxy_agrees=True,
-        smt_signal="bullish",
+        confidence=0,
+        daily_bias="none",
+        four_h_bias="none",
+        one_h_bias="none",
+        ema_stack_ok=False,
+        dxy_agrees=False,
+        smt_signal=None,
         sweep_side="SSL",
-        sweep_level=499.00,
+        sweep_level=round(price * 0.99, 2),
         structure_event="BOS",
         entry_type="OTE",
-        entry=500.00,
-        stop=497.00,
-        target=503.00,
+        entry=price,
+        stop=stop,
+        target=target,
         rr=1.0,
         contract=contract,
         news_clear=True,
@@ -83,10 +86,11 @@ def force_alert(ticker: str) -> None:
     """Run a live scan on *ticker* and send the result to Telegram.
 
     Sends the real setup if one is found; otherwise sends a clearly labelled
-    placeholder so you can verify the full Telegram formatting end-to-end.
+    placeholder built from the real current price so you can verify formatting.
     """
     ticker = ticker.upper()
     log.info("Force-alert: loading live data for %s", ticker)
+    data = None
     try:
         data = load_ticker_data(ticker)
         setup = evaluate(ticker, data,
@@ -101,9 +105,11 @@ def force_alert(ticker: str) -> None:
         send_alert(setup)
         print(f"Real setup alert sent for {ticker}.")
     else:
-        log.info("No real setup for %s — sending placeholder alert", ticker)
-        send_alert(_placeholder_setup(ticker))
-        print(f"Placeholder alert sent for {ticker} (no real setup found).")
+        # Use the real current close price for the placeholder.
+        price = float(data.daily["close"].iloc[-1]) if data is not None else 100.0
+        log.info("No real setup for %s (last close %.2f) — sending placeholder", ticker, price)
+        send_alert(_placeholder_setup(ticker, price))
+        print(f"Placeholder alert sent for {ticker} at live price {price:.2f} (no real setup found).")
 
 
 def run() -> None:
