@@ -1,0 +1,30 @@
+name: ict-scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every 20 minutes, 13:30–20:10 UTC, Mon–Fri
+    # Covers 09:30–16:00 ET during DST; widen for standard time if needed.
+    - cron: "*/20 13-20 * * 1-5"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scanner
+        run: python main.py
+        env:
+          TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+          TRADIER_BASE_URL: https://sandbox.tradier.com/v1
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
