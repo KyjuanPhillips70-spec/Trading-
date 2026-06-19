@@ -124,9 +124,6 @@ def smt_divergence(
     if pair_l_a and pair_l_b:
         a_ll = pair_l_a[1] < pair_l_a[0]   # lower low
         b_hl = pair_l_b[1] > pair_l_b[0]   # higher low
-        if (a_ll and b_hl) or (not a_ll and not b_hl and
-                                pair_l_a[1] < pair_l_a[0] != (pair_l_b[1] < pair_l_b[0])):
-            pass
         if (a_ll and b_hl) or (pair_l_b[1] < pair_l_b[0] and pair_l_a[1] > pair_l_a[0]):
             bullish_smt = True
 
@@ -183,25 +180,24 @@ def analyze(
 
     # DXY inverse SMT (negatively correlated).
     if smt_signal is None and equity_df is not None and not dxy_df.empty:
-        # For the inverse pair we check if one makes LL while DXY fails HH.
-        _, eq_lows  = _last_two_swings(equity_df, k=swing_k)
-        dxy_highs, _ = _last_two_swings(dxy_df, k=swing_k)
+        eq_pair_h, eq_lows = _last_two_swings(equity_df, k=swing_k)
+        dxy_highs, dxy_pair_l = _last_two_swings(dxy_df, k=swing_k)
+
+        # Bullish: equity LL + DXY failed HH
         if eq_lows and dxy_highs:
-            eq_ll   = eq_lows[1]  < eq_lows[0]    # equity lower low
-            dxy_no_hh = dxy_highs[1] < dxy_highs[0]  # DXY lower high (failed HH)
+            eq_ll     = eq_lows[1] < eq_lows[0]
+            dxy_no_hh = dxy_highs[1] < dxy_highs[0]
             if eq_ll and dxy_no_hh:
                 smt_signal = "bullish"
                 detail_parts.append("SMT (DXY inverse): equity LL + DXY failed HH → bullish SMT")
-            eq_hh  = eq_lows[1] > eq_lows[0]   # reuse for high check via pair_h
-            # bearish inverse: equity HH + DXY failed LL
-            dxy_pair_l, _ = _last_two_swings(dxy_df, k=swing_k)
-            eq_pair_h, _  = _last_two_swings(equity_df, k=swing_k)
-            if dxy_pair_l and eq_pair_h:
-                eq_hh2    = eq_pair_h[1] > eq_pair_h[0]
-                dxy_no_ll = dxy_pair_l[1] > dxy_pair_l[0]
-                if eq_hh2 and dxy_no_ll:
-                    smt_signal = "bearish"
-                    detail_parts.append("SMT (DXY inverse): equity HH + DXY failed LL → bearish SMT")
+
+        # Bearish: equity HH + DXY failed LL
+        if smt_signal is None and eq_pair_h and dxy_pair_l:
+            eq_hh     = eq_pair_h[1] > eq_pair_h[0]
+            dxy_no_ll = dxy_pair_l[1] > dxy_pair_l[0]
+            if eq_hh and dxy_no_ll:
+                smt_signal = "bearish"
+                detail_parts.append("SMT (DXY inverse): equity HH + DXY failed LL → bearish SMT")
 
     if not detail_parts:
         detail_parts.append("No SMT signal detected")

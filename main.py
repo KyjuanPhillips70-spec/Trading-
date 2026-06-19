@@ -35,43 +35,51 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def _placeholder_setup(ticker: str) -> Setup:
-    """Return a fully-formed placeholder Setup for *ticker* (no real signal)."""
+def _placeholder_setup(ticker: str, price: float, direction: str = "long") -> Setup:
+    """Return a placeholder Setup for *ticker* using *price* as the current price."""
+    direction = direction.lower()
+    is_long = direction != "short"
+    opt_type = "call" if is_long else "put"
+    opt_letter = "C" if is_long else "P"
+    stop   = round(price * (0.985 if is_long else 1.015), 2)
+    target = round(price * (1.015 if is_long else 0.985), 2)
+    strike = round(price / 5) * 5
+    delta  = 0.55 if is_long else -0.55
     contract = Contract(
-        symbol=f"{ticker}240119C00500000",
-        option_type="call",
-        strike=500.0,
+        symbol=f"{ticker}{date.today().strftime('%y%m%d')}{opt_letter}{int(strike):08d}000",
+        option_type=opt_type,
+        strike=float(strike),
         expiry=str(date.today()),
         dte=10,
-        bid=4.90,
-        ask=5.10,
-        mid=5.00,
-        delta=0.55,
+        bid=round(price * 0.022, 2),
+        ask=round(price * 0.024, 2),
+        mid=round(price * 0.023, 2),
+        delta=delta,
         theta=-0.05,
         gamma=0.01,
         vega=0.10,
         iv=0.45,
         oi=1000,
         volume=300,
-        settlement_note="equity — PLACEHOLDER, not a real setup",
+        settlement_note="equity — PLACEHOLDER alert, no real ICT setup found",
     )
     return Setup(
         ticker=ticker,
-        direction="LONG",
-        confidence=75,
-        daily_bias="long",
-        four_h_bias="long",
-        one_h_bias="long",
+        direction="LONG" if is_long else "SHORT",
+        confidence=0,
+        daily_bias="long" if is_long else "short",
+        four_h_bias="long" if is_long else "short",
+        one_h_bias="long" if is_long else "short",
         ema_stack_ok=True,
         dxy_agrees=True,
-        smt_signal="bullish",
-        sweep_side="SSL",
-        sweep_level=499.00,
-        structure_event="BOS",
+        smt_signal="bullish" if is_long else "bearish",
+        sweep_side="SSL" if is_long else "BSL",
+        sweep_level=round(price * (0.99 if is_long else 1.01), 2),
+        structure_event="BOS" if is_long else "MSS",
         entry_type="OTE",
-        entry=500.00,
-        stop=497.00,
-        target=503.00,
+        entry=price,
+        stop=stop,
+        target=target,
         rr=1.0,
         contract=contract,
         news_clear=True,
@@ -79,14 +87,17 @@ def _placeholder_setup(ticker: str) -> Setup:
     )
 
 
-def force_alert(ticker: str) -> None:
+def force_alert(ticker: str, direction: str = "long") -> None:
     """Run a live scan on *ticker* and send the result to Telegram.
 
     Sends the real setup if one is found; otherwise sends a clearly labelled
-    placeholder so you can verify the full Telegram formatting end-to-end.
+    placeholder built from the real current price so you can verify formatting.
+    *direction* controls whether the placeholder is LONG or SHORT when no real
+    setup is found.
     """
     ticker = ticker.upper()
-    log.info("Force-alert: loading live data for %s", ticker)
+    log.info("Force-alert: loading live data for %s (direction hint: %s)", ticker, direction)
+    data = None
     try:
         data = load_ticker_data(ticker)
         setup = evaluate(ticker, data,
@@ -101,9 +112,10 @@ def force_alert(ticker: str) -> None:
         send_alert(setup)
         print(f"Real setup alert sent for {ticker}.")
     else:
-        log.info("No real setup for %s — sending placeholder alert", ticker)
-        send_alert(_placeholder_setup(ticker))
-        print(f"Placeholder alert sent for {ticker} (no real setup found).")
+        price = float(data.daily["close"].iloc[-1]) if data is not None else 100.0
+        log.info("No real setup for %s (last close %.2f) — sending %s placeholder", ticker, price, direction)
+        send_alert(_placeholder_setup(ticker, price, direction))
+        print(f"Placeholder {direction.upper()} alert sent for {ticker} at live price {price:.2f}.")
 
 
 def run() -> None:
@@ -134,8 +146,10 @@ if __name__ == "__main__":
     elif "--force-alert" in sys.argv:
         idx = sys.argv.index("--force-alert")
         if idx + 1 >= len(sys.argv):
-            print("Usage: python main.py --force-alert TICKER")
+            print("Usage: python main.py --force-alert TICKER [long|short]")
             sys.exit(1)
-        force_alert(sys.argv[idx + 1])
+        _ticker = sys.argv[idx + 1]
+        _direction = sys.argv[idx + 2] if idx + 2 < len(sys.argv) else "long"
+        force_alert(_ticker, _direction)
     else:
         run()
