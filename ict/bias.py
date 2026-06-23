@@ -167,7 +167,12 @@ def get_bias(
     is_index = ticker.upper() in [t.upper() for t in index_tickers]
 
     if is_index:
-        # Hard Requirement #1: indices need BOTH 4H and 1H clear.
+        # Hard Requirement #1: indices need Daily + 4H + 1H all clear.
+        if four_h_bias == "none" or four_h_bias != daily_bias:
+            reasons.append(f"{ticker} is an index — requires clear 4H bias too; got {four_h_bias}")
+            return BiasResult(bias="none", htf_zone=None, reasons=reasons,
+                              daily_bias=daily_bias, four_h_bias=four_h_bias,
+                              one_h_bias=one_h_bias, ema_stack_ok=stack_ok)
         if one_h_bias == "none" or one_h_bias != daily_bias:
             reasons.append(f"{ticker} is an index — requires clear 1H bias too; got {one_h_bias}")
             return BiasResult(bias="none", htf_zone=None, reasons=reasons,
