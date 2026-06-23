@@ -151,11 +151,14 @@ def get_bias(
     four_h_bias = _timeframe_bias(four_h, k=swing_k_htf)
     reasons.append(f"4H: {four_h_bias}")
 
-    if four_h_bias == "none" or four_h_bias != daily_bias:
-        reasons.append("4H bias missing or contradicts daily — no trade")
+    four_h_contradicts = four_h_bias != "none" and four_h_bias != daily_bias
+    if four_h_contradicts:
+        reasons.append("4H contradicts daily — no trade")
         return BiasResult(bias="none", htf_zone=None, reasons=reasons,
                           daily_bias=daily_bias, four_h_bias=four_h_bias,
                           ema_stack_ok=stack_ok)
+    if four_h_bias == "none":
+        reasons.append("4H unconfirmed — proceeding on daily bias")
 
     # --- 1H ---
     one_h_bias = _timeframe_bias(one_h, k=swing_k_ltf)
