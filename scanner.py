@@ -119,7 +119,7 @@ def evaluate(
         swing_k_htf=config.SWING_K_HTF, swing_k_ltf=config.SWING_K_LTF,
     )
     if bias_res.bias == "none":
-        log.debug("%s: no HTF bias (%s)", ticker, "; ".join(bias_res.reasons))
+        log.info("%s: no HTF bias (%s)", ticker, "; ".join(bias_res.reasons))
         return None
     direction = bias_res.bias  # "long" | "short"
 
@@ -133,10 +133,10 @@ def evaluate(
         swing_k=config.SWING_K_HTF,
     )
     if not smt_res.dxy_agrees and config.DXY_MODE == "block":
-        log.debug("%s: DXY contradicts bias (block mode)", ticker)
+        log.info("%s: DXY contradicts bias (block mode)", ticker)
         return None
     if config.REQUIRE_SMT and smt_res.smt is None:
-        log.debug("%s: SMT required but absent", ticker)
+        log.info("%s: SMT required but absent", ticker)
         return None
 
     # --- 5. LTF TRIGGER (1H) -------------------------------------------------
@@ -153,7 +153,7 @@ def evaluate(
     sweep_side = "SSL" if direction == "long" else "BSL"
     sweep = latest_sweep(pools, side=sweep_side)
     if sweep is None or sweep.sweep_index is None:
-        log.debug("%s: no %s sweep on LTF", ticker, sweep_side)
+        log.info("%s: no %s sweep on LTF", ticker, sweep_side)
         return None
 
     # (b) structure: BOS/MSS in the bias direction at/after the sweep.
@@ -165,7 +165,7 @@ def evaluate(
         None,
     )
     if structure_event is None:
-        log.debug("%s: no %s structure break after sweep", ticker, want)
+        log.info("%s: no %s structure break after sweep", ticker, want)
         return None
 
     # (c) OTE / OB / FVG confluence.
@@ -215,7 +215,7 @@ def evaluate(
         entry_type = None
 
     if entry_type is None:
-        log.debug("%s: price not in OTE / OB / FVG", ticker)
+        log.info("%s: price not in OTE / OB / FVG", ticker)
         return None
     if ote.invalidated:
         return None
@@ -225,7 +225,7 @@ def evaluate(
         now, before_h=config.NEWS_BEFORE_H, after_h=config.NEWS_AFTER_H,
     )
     if blocked:
-        log.debug("%s: news blackout (%s)", ticker, event.title if event else "?")
+        log.info("%s: news blackout (%s)", ticker, event.title if event else "?")
         return None
     next_event = next_high_impact_event(now)
 
@@ -255,7 +255,7 @@ def evaluate(
         stop_buffer_atr=config.STOP_BUFFER_ATR, min_rr=config.MIN_RR,
     )
     if risk_res is None:
-        log.debug("%s: R:R below %.1f", ticker, config.MIN_RR)
+        log.info("%s: R:R below %.1f", ticker, config.MIN_RR)
         return None
 
     # --- 8. CONTRACT ---------------------------------------------------------
@@ -267,7 +267,7 @@ def evaluate(
         delta_min=config.DELTA_MIN, delta_max=config.DELTA_MAX,
     )
     if contract is None:
-        log.debug("%s: no suitable contract", ticker)
+        log.info("%s: no suitable contract", ticker)
         return None
 
     # --- 9. CONFIDENCE -------------------------------------------------------
