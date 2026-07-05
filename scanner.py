@@ -181,9 +181,9 @@ def evaluate(
         swing_end = float(highs[structure_event.index])
     else:
         swing_origin = sweep_extreme
-        # For bearish: find the lowest close after the sweep as the impulse low
-        sweep_to_bos = closes[sweep.sweep_index:structure_event.index + 1]
-        swing_end = float(sweep_to_bos.min()) if len(sweep_to_bos) > 0 else float(lows[structure_event.index])
+        # For bearish: impulse low anchors the 0.0 Fib — use wick low, not close
+        swing_end = float(lows[sweep.sweep_index:structure_event.index + 1].min()) \
+            if sweep.sweep_index <= structure_event.index else float(lows[structure_event.index])
 
     fvgs = find_fvgs(ltf, atr_length=config.DISP_ATR_LEN, disp_mult=config.DISP_MULT)
     obs = find_order_blocks(ltf, events, fvgs,
